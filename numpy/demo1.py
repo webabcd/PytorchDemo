@@ -3,9 +3,12 @@ import numpy as np
 
 # 创建数组
 def sample1():
+    # 通过 np.array() 创建 numpy 数组
     a = np.array([1, 2, 3])
-    # .dtype 用于获取数组元素的数据类型
+    # dtype 用于获取数组元素的数据类型
     print(a, a.dtype) # [1 2 3] int32
+    # 通过 tolist() 将 numpy 数组转换为 python 列表
+    print(a.tolist()) # [1, 2, 3]
 
     b = np.array([1.2, 2.3, 3.4])
     print(b, b.dtype) # [1.2 2.3 3.4] float64
@@ -67,6 +70,10 @@ def sample1():
     # 注：如果通过 arange 生成浮点元素的话，由于浮点数的计算精度问题，生成的元素个数可能会与预期的不一致
     k = np.arange(10, 20, 2)
     print(k) # [10 12 14 16 18]
+    # 创建一个从 0 到 5 的数组（左闭右开），默认步长为 1
+    print(np.arange(5)) # [0 1 2 3 4]
+    # 创建一个从 -5 到 5 的数组（左闭右开），默认步长为 1
+    print(np.arange(-5, 5)) # [-5 -4 -3 -2 -1  0  1  2  3  4]
 
     # 创建一个数组，第一个元素是 0，最后一个元素是 2，数组共有 10 个元素并组成一个等差数列
     l = np.linspace(0, 2, 10)
