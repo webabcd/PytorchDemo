@@ -12,3 +12,7 @@
 - numpy/demo4.py
 5. numpy 数组的添加和删除，以及常用函数
 - numpy/demo4.py
+
+#### pytorch 基础
+1. torch 张量的基础操作
+- basic/demo1.py
