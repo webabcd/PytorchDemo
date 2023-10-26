@@ -70,7 +70,7 @@ def sample1():
  [  3   4]]
     '''
 
-    # 升维，并增加指定位置的轴
+    # 升维，在指定的位置上添加轴
     i = np.expand_dims(g, axis=2)
     print(i)
     '''
@@ -81,7 +81,7 @@ def sample1():
   [  4]]]
     '''
 
-    # 降维，并删除指定位置的轴
+    # 降维，删除指定位置的轴
     j = np.squeeze(i, axis=2)
     print(j)
     '''
