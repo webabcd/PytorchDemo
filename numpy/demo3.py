@@ -62,7 +62,7 @@ def sample2():
  [7 8]]
     '''
 
-    # 沿着轴 1 连接两个数组
+    # 沿着轴 0 连接两个数组
     # 轴（axis）就是指的维度
     c = np.concatenate((a,b), axis=0)
     print(c)
