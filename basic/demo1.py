@@ -256,6 +256,25 @@ tensor([[100,   2,   4,   6],
         [  1,   3,   5,   7]])
     '''
 
+    # 经过上面一堆操作后，g 中的元素的地址已经是不连续的了
+    # contiguous() 可以将张量中的元素的地址变为连续的
+    h = g.contiguous()
+
+    # 修改张量的形状
+    # 与 reshape() 不同的是，view() 后的张量中的元素会通过指针引用原张量中的元素。另外只用张量中的元素地址是连续的，才能使用 view()
+    i = h.view(8)
+    print(i)
+    '''
+tensor([100,   2,   4,   6,   1,   3,   5,   7])
+    '''
+
+    # 因为 view() 后的张量中的元素会通过指针引用原张量中的元素，所以新张量中的元素的变化会影响原张量，原张量中的元素的变化也会影响新张量
+    h[0] = torch.tensor([0, 0, 0, 0])
+    print(i)
+    '''
+tensor([0, 0, 0, 0, 1, 3, 5, 7])
+    '''
+
 
 # torch 张量的常用函数
 # torch.sin(), torch.cos(), torch.tan(), torch.floor(), torch.ceil(), torch.min(), torch.max() 之类的用法和 numpy 差不多，参见 /numpy/demo5.py 中的说明
