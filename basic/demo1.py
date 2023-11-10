@@ -301,6 +301,12 @@ tensor([[ 11,  12, 103],
 tensor([1, 2, 3, 4])
     '''
 
+    # 取平均值
+    print(torch.tensor([1.0,2.0,3.0,4.0]).mean())
+    '''
+tensor(2.5000)
+    '''
+
 
 if __name__ == '__main__':
     # python 列表，numpy 数组，torch 张量相互转换
@@ -315,3 +321,13 @@ if __name__ == '__main__':
     sample5()
     # torch 张量的常用函数
     sample6()
+
+    # 当前环境是否支持 cuda
+    if torch.cuda.is_available():
+        a = torch.tensor([1,2,3]) 
+        # 后续关于此张量的计算都会在 gpu 上运行
+        a.cuda()
+        # 原来在 gpu 上运行的张量改在 cpu 上运行
+        a.cpu()
+        # 可以指定在哪个 gpu 上运行
+        a.to("cuda:0" if torch.cuda.is_available() else "cpu")

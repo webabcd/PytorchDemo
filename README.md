@@ -14,5 +14,7 @@
 - numpy/demo4.py
 
 #### pytorch 基础
-1. torch 张量的基础操作
+1. 张量的基础操作
 - basic/demo1.py
+2. 自动求导
+- basic/demo2.py
