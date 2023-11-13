@@ -56,9 +56,14 @@ def sample2():
     d = np.ceil(b)
     print(d) # [0. 1. 1. 1. 1.]
 
-    # 取四舍五入的整数
+    # 取四舍五入后的的整数（around 和 round 是一样的）
     e = np.around(b)
     print(e) # [0. 0. 1. 1. 1.]
+    # 指定保留的小数位数，并四舍五入（around 和 round 是一样的）
+    e = np.around(b, 3)
+    print(e) # [0. 0.342 0.643 0.985 1.]
+    # 对于正好 .5 来说，其会被舍入到最接近的偶数
+    print(np.around(0.5), np.around(1.5)) # 0.0 2.0
 
     # 取最小数
     f = np.min(b)

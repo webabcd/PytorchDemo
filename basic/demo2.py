@@ -26,6 +26,14 @@ def sample1():
     y.backward(torch.ones(5))
     # sin(x) 的导数是 cos(x)
     print(x.grad) # tensor([ 1.0000e+00, -4.3711e-08, -1.0000e+00,  1.1925e-08,  1.0000e+00])
+
+    x = torch.tensor(1.11, requires_grad=True)
+    y = x * 2
+    y = y * 2
+    y = y * 2
+    y.backward()
+    # 张量的所有梯度将会自动累加到​​.grad​​ 属性
+    print(x.grad) # tensor(8.)
     
 
 if __name__ == '__main__':

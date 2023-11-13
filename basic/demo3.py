@@ -1,3 +1,15 @@
+'''
+
+
+损失率（Loss）用于描述模型预测与实际情况之间的差异
+  比如说有两种分类 0 和 1，实际分类为 1，预测为 0.8 的可能性为分类 1，那么损失率为 20%
+准确率（Accuracy）用于描述模型在整个数据集上正确预测的样本比例
+  比如说有两种分类 0 和 1，实际分类为 1，预测为 0.8 的可能性为分类 1，所以预测的结果是分类 1，那么准确率为 100%
+
+学习率（learning rate）是比较重要的一个超参数（超参数是在模型训练之前设置的参数，非超参数是在模型训练过程中通过学习而自动得到的参数）
+学习率决定了模型参数在每一轮迭代中的更新步长，其选择对模型的训练和性能有着重要的影响
+'''
+
 import os 
 import numpy as np 
 import torch
@@ -83,82 +95,101 @@ def sample2():
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False, drop_last=False)
 
     # ResNet50 是深度学习领域中一种经典的卷积神经网络结构，其适用于训练大规模的图像数据集，通常用于图像分类、目标检测和图像分割等计算机视觉任务
-    # 从网络上下载 ResNet50 并缓存到本地
-    # model = torchvision.models.resnet50(pretrained=True)
-    # 从本地加载 ResNet50 模型
-    model = torchvision.models.resnet50(pretrained=False)
-    state_dict = torch.load(os.path.join(os.getcwd(), 'checkpoints/resnet50-0676ba61.pth'))
+    # 从网络上下载 ResNet50 模型（包括模型结构和模型权重，模型权重保存在模型的状态字典中）并缓存到本地
+    # model = torchvision.models.resnet50(weights=torchvision.models.ResNet50_Weights.DEFAULT)
+
+    # 实例化 ResNet50 模型结构（不加载模型权重）
+    model = torchvision.models.resnet50(weights=None)
+    # 加载模型的状态字典，即模型的权重
+    state_dict = torch.load('checkpoints/resnet50.pth')
     model.load_state_dict(state_dict)
+    # 需要分类的类别的数量
+    model.fc.out_features = 10
 
-
-    # 损失率（Loss）是一个衡量模型预测与实际情况之间差异的指标。为了形象说明，我们可以通过一个简单的例子来理解损失率。
-    # 准确率（Accuracy）是一个用于度量模型在整个数据集上正确预测的样本比例的指标。为了形象说明，我们可以通过一个简单的例子来理解准确率。
-
-    model.fc.out_features=10
-    print(model)
-
-    #训练&验证
-
-    # 定义损失函数和优化器
     # cpu 加速就是 'cpu'
     # 第 1 块 gpu 加速就是 'cuda:0'，第 2 块 gpu 加速就是 'cuda:1'，以此类推...
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    # 损失函数：交叉熵
-    criterion = torch.nn.CrossEntropyLoss()
-    # 优化器
-    # 优化器的学习率
-    lr = 1e-4
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    #运行epoch
-    max_epochs = 10
-    epoch = max_epochs
     model = model.to(device)
-    total_step = len(train_loader)
-    train_all_loss = []
-    test_all_loss = []
 
+    # 定义损失函数（交叉熵）
+    criterion = torch.nn.CrossEntropyLoss()
+    # 优化器的学习率（learning rate）
+    lr = 1e-4
+    # 定义优化器
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    # 遍历整个数据集的次数
+    epoch = 10
+    
     for i in range(epoch):
+        # 将模型设置为训练模式
         model.train()
-        train_total_loss = 0
+        # 总的训练数
         train_total_num = 0
+        # 总的训练损失率
+        train_total_loss = 0
+        # 总的训练正确数
         train_total_correct = 0
 
-        for iter, (images,labels) in enumerate(train_loader):
+        # 每次迭代出的数据量就是 batch_size 指定的大小
+        for iter, (images, labels) in enumerate(train_loader):
+            # 当前迭代出的批次的图片数据的集合
             images = images.to(device)
+            # 当前迭代出的批次的分类数据的集合
             labels = labels.to(device)
             
+            # 对当前批次的数据做训练
             outputs = model(images)
-            loss = criterion(outputs,labels)
-            train_total_correct += (outputs.argmax(1) == labels).sum().item()
-            
-            #backword
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            
+            loss = criterion(outputs, labels)
             train_total_num += labels.shape[0]
+            train_total_correct += (outputs.argmax(1) == labels).sum().item()
             train_total_loss += loss.item()
-            print("Epoch [{}/{}], Iter [{}/{}], train_loss:{:4f}".format(i+1,epoch,iter+1,total_step,loss.item()/labels.shape[0]))
+            
+            # 反向传播计算梯度
+            loss.backward()
+            # 优化模型参数（根据学习率和梯度做参数更新）
+            optimizer.step()
+            # 梯度清零
+            optimizer.zero_grad()
+            
+            # 打印当前批次的训练结果
+            print("epoch({}/{}), iter({}/{}), train_loss:{:4f}".format(
+                i+1, epoch, 
+                iter+1, len(train_loader), 
+                loss.item()/labels.shape[0]))
+
+
+        
+        # 将模型设置为测试模式
         model.eval()
-        test_total_loss = 0
-        test_total_correct = 0
+        # 总的测试数
         test_total_num = 0
+        # 总的测试损失率
+        test_total_loss = 0
+        # 总的测试正确数
+        test_total_correct = 0
+        
         for iter,(images,labels) in enumerate(test_loader):
             images = images.to(device)
             labels = labels.to(device)
             
+            # 对当前批次的数据做测试
             outputs = model(images)
             loss = criterion(outputs,labels)
-            test_total_correct += (outputs.argmax(1) == labels).sum().item()
-            test_total_loss += loss.item()
             test_total_num += labels.shape[0]
-        print("Epoch [{}/{}], train_loss:{:.4f}, train_acc:{:.4f}%, test_loss:{:.4f}, test_acc:{:.4f}%".format(
-            i+1, epoch, train_total_loss / train_total_num, train_total_correct / train_total_num * 100, test_total_loss / test_total_num, test_total_correct / test_total_num * 100
-        
-        ))
-        train_all_loss.append(np.round(train_total_loss / train_total_num,4))
-        test_all_loss.append(np.round(test_total_loss / test_total_num,4))
+            test_total_loss += loss.item()
+            test_total_correct += (outputs.argmax(1) == labels).sum().item()
+            
+        # 打印测试结果
+        print("epoch({}/{}), train_loss:{:.4f}, train_acc:{:.4f}%, test_loss:{:.4f}, test_acc:{:.4f}%".format(
+            i+1, epoch, 
+            train_total_loss / train_total_num, 
+            train_total_correct / train_total_num * 100, 
+            test_total_loss / test_total_num, 
+            test_total_correct / test_total_num * 100))
 
+
+    # torch.save(model, 'checkpoints/my_resnet50.pth')
+    torch.save(model.state_dict(), 'checkpoints/my_resnet50.pth')
 
 
 
