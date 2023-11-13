@@ -101,7 +101,7 @@ def sample2():
     # 实例化 ResNet50 模型结构（不加载模型权重）
     model = torchvision.models.resnet50(weights=None)
     # 加载模型的状态字典，即模型的权重
-    state_dict = torch.load('checkpoints/resnet50.pth')
+    state_dict = torch.load('checkpoints/original_resnet50.pth')
     model.load_state_dict(state_dict)
     # 需要分类的类别的数量
     model.fc.out_features = 10
@@ -188,12 +188,49 @@ def sample2():
             test_total_correct / test_total_num * 100))
 
 
+    # 
     # torch.save(model, 'checkpoints/my_resnet50.pth')
     torch.save(model.state_dict(), 'checkpoints/my_resnet50.pth')
 
 
+def sample3():
+    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    test_dataset = datasets.CIFAR10(root=os.path.join(os.getcwd(), "dataset"), train=False, download=False, transform=transform)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=32, num_workers=0, shuffle=False, drop_last=False)
+
+    model = torchvision.models.resnet50(weights=None)
+    state_dict = torch.load('checkpoints/my_resnet50.pth')
+    model.load_state_dict(state_dict)
+    model.fc.out_features = 10
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+    # 定义损失函数（交叉熵）
+    criterion = torch.nn.CrossEntropyLoss()
+    
+    model.eval()
+    test_total_num = 0
+    test_total_loss = 0
+    test_total_correct = 0
+    
+    for iter,(images,labels) in enumerate(test_loader):
+        images = images.to(device)
+        labels = labels.to(device)
+        
+        # 对当前批次的数据做测试
+        outputs = model(images)
+        loss = criterion(outputs,labels)
+        test_total_num += labels.shape[0]
+        test_total_loss += loss.item()
+        test_total_correct += (outputs.argmax(1) == labels).sum().item()
+        
+    # 打印测试结果
+    print("test_loss:{:.4f}, test_acc:{:.4f}%".format(
+        test_total_loss / test_total_num, 
+        test_total_correct / test_total_num * 100))
 
 if __name__ == '__main__':
     #sample1()
-    sample2()
+    #sample2()
+    sample3()
 
