@@ -195,19 +195,19 @@ def sample2():
             test_total_correct / test_total_num * 100))
 
 
-    # 保存整个模型（包括模型结构和模型权重）
+    # 保存整个模型（包括模型结构和模型权重）。之后可以重新加载并继续训练或评估指定的图片
     # torch.save(model, 'checkpoints/my_whole_resnet50.pth')
-    # 只保存模型的状态字典，即模型的权重
+    # 只保存模型的状态字典，即模型的权重。之后可以重新加载并继续训练或评估指定的图片
     torch.save(model.state_dict(), 'checkpoints/my_resnet50.pth')
 
 
 # 加载训练后的模型，并评估指定的图片
 def sample3():
-    # 加载整个模型（包括模型结构和模型权重）
+    # 加载整个模型（包括模型结构和模型权重）。之后可以继续训练或评估指定的图片
     # model = torch.load('checkpoints/my_whole_resnet50.pth')
     # 实例化 ResNet50 模型结构（不加载模型权重）
     model = torchvision.models.resnet50(weights=None)
-    # 加载模型的状态字典，即模型的权重
+    # 加载模型的状态字典，即模型的权重。之后可以继续训练或评估指定的图片
     state_dict = torch.load('checkpoints/my_resnet50.pth')
     model.load_state_dict(state_dict)
 
