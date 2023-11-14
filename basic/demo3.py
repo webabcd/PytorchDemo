@@ -1,4 +1,5 @@
 '''
+本例用于演示如何通过 ResNet50 做图片分类的学习（对 cifar10 数据集做训练和测试），保存训练后的模型，加载训练后的模型并评估指定的图片
 
 
 损失率（Loss）用于描述模型预测与实际情况之间的差异
@@ -18,7 +19,11 @@ from torchvision.transforms import transforms
 from torchvision import datasets
 import matplotlib.pyplot as plt
 import torchvision
+# PIL（Python Imaging Library）
+from PIL import Image
 
+
+# 从 cifar10 数据集获取训练数据和测试数据
 def sample1():
     # 定义数据变换
     transform = transforms.Compose([
@@ -40,24 +45,24 @@ def sample1():
     print(f'test_dataset:{len(test_dataset)}') # test_dataset:10000
 
     # cifar10 数据集的 10 个类别
-    image_classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+    image_category_list = ['plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
     # 获取数据集的第 1 条数据
     # 返回的 tuple 的第 1 个数据是图片的数据，其按照 channel(rgb), height, widht 的结构保存
     # 返回的 tuple 的第 2 个数据是图片的类别的索引
-    image_data, image_class_index = train_dataset.__getitem__(0)
+    image_data, image_category_index = train_dataset.__getitem__(0)
     print(image_data.size()) # torch.Size([3, 32, 32])
-    print(image_classes[image_class_index]) # frog
+    print(image_category_list[image_category_index]) # frog
  
     # 定义画布
     figure = plt.figure()
     for i in range(8):
-        image_data, image_class_index = train_dataset.__getitem__(i)
+        image_data, image_category_index = train_dataset.__getitem__(i)
         # 将 channel(rgb), height, widht 变为 height, widht, channel(rgb)
         image = image_data.numpy().transpose(1, 2, 0)
         # 将画布分为 2 行 4 列，当前在第 i + 1 单元格绘制（注：这个值从 1 开始，而不是从 0 开始）
         ax = figure.add_subplot(2, 4, i + 1, xticks=[], yticks=[])
         # 设置当前单元格的标题
-        plt.xlabel(image_classes[image_class_index])
+        plt.xlabel(image_category_list[image_category_index])
         # 调整单元格的布局
         plt.subplots_adjust(wspace=0.05, hspace=0.05)
         # 在当前单元格绘制图片
@@ -71,14 +76,15 @@ def sample1():
     train_dataset = datasets.CIFAR10(root=os.path.join(os.getcwd(), "dataset"), train=True, download=False)
     figure = plt.figure()
     for i in range(8):
-        image_data, image_class_index = train_dataset.__getitem__(i)
+        image_data, image_category_index = train_dataset.__getitem__(i)
         ax = figure.add_subplot(2, 4, i + 1, xticks=[], yticks=[])
-        plt.xlabel(image_classes[image_class_index])
+        plt.xlabel(image_category_list[image_category_index])
         plt.subplots_adjust(wspace=0.05, hspace=0.05)
         plt.imshow(image_data)
     plt.show()
     
 
+# 通过 ResNet50 做图片分类的学习（对 cifar10 数据集做训练和测试），并保存训练后的模型
 def sample2():
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
     train_dataset = datasets.CIFAR10(root=os.path.join(os.getcwd(), "dataset"), train=True, download=False, transform=transform)
@@ -94,7 +100,7 @@ def sample2():
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=True, drop_last=True)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False, drop_last=False)
 
-    # ResNet50 是深度学习领域中一种经典的卷积神经网络结构，其适用于训练大规模的图像数据集，通常用于图像分类、目标检测和图像分割等计算机视觉任务
+    # ResNet50（Residual Network-50）是深度学习领域中一种经典的卷积神经网络结构，其适用于训练大规模的图像数据集，通常用于图像分类、目标检测和图像分割等计算机视觉任务
     # 从网络上下载 ResNet50 模型（包括模型结构和模型权重，模型权重保存在模型的状态字典中）并缓存到本地
     # model = torchvision.models.resnet50(weights=torchvision.models.ResNet50_Weights.DEFAULT)
 
@@ -111,11 +117,13 @@ def sample2():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
 
-    # 定义损失函数（交叉熵）
+    # 定义损失函数
+    # torch.nn.CrossEntropyLoss 通常用于多类别分类任务，它是一个用于计算交叉熵损失的损失函数，它将 Softmax 激活函数和负对数似然损失结合在一起
     criterion = torch.nn.CrossEntropyLoss()
     # 优化器的学习率（learning rate）
     lr = 1e-4
     # 定义优化器
+    # torch.optim.Adam 是 Adam 优化算法的实现
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     # 遍历整个数据集的次数
     epoch = 10
@@ -157,9 +165,8 @@ def sample2():
                 iter+1, len(train_loader), 
                 loss.item()/labels.shape[0]))
 
-
         
-        # 将模型设置为测试模式
+        # 将模型设置为测试模式，即评估模式
         model.eval()
         # 总的测试数
         test_total_num = 0
@@ -188,49 +195,58 @@ def sample2():
             test_total_correct / test_total_num * 100))
 
 
-    # 
-    # torch.save(model, 'checkpoints/my_resnet50.pth')
+    # 保存整个模型（包括模型结构和模型权重）
+    # torch.save(model, 'checkpoints/my_whole_resnet50.pth')
+    # 只保存模型的状态字典，即模型的权重
     torch.save(model.state_dict(), 'checkpoints/my_resnet50.pth')
 
 
+# 加载训练后的模型，并评估指定的图片
 def sample3():
-    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-    test_dataset = datasets.CIFAR10(root=os.path.join(os.getcwd(), "dataset"), train=False, download=False, transform=transform)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=32, num_workers=0, shuffle=False, drop_last=False)
-
+    # 加载整个模型（包括模型结构和模型权重）
+    # model = torch.load('checkpoints/my_whole_resnet50.pth')
+    # 实例化 ResNet50 模型结构（不加载模型权重）
     model = torchvision.models.resnet50(weights=None)
+    # 加载模型的状态字典，即模型的权重
     state_dict = torch.load('checkpoints/my_resnet50.pth')
     model.load_state_dict(state_dict)
-    model.fc.out_features = 10
 
+    # 开启 gpu 加速
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
-    # 定义损失函数（交叉熵）
-    criterion = torch.nn.CrossEntropyLoss()
-    
+    # 将模型设置为评估模式
     model.eval()
-    test_total_num = 0
-    test_total_loss = 0
-    test_total_correct = 0
-    
-    for iter,(images,labels) in enumerate(test_loader):
-        images = images.to(device)
-        labels = labels.to(device)
-        
-        # 对当前批次的数据做测试
-        outputs = model(images)
-        loss = criterion(outputs,labels)
-        test_total_num += labels.shape[0]
-        test_total_loss += loss.item()
-        test_total_correct += (outputs.argmax(1) == labels).sum().item()
-        
-    # 打印测试结果
-    print("test_loss:{:.4f}, test_acc:{:.4f}%".format(
-        test_total_loss / test_total_num, 
-        test_total_correct / test_total_num * 100))
+
+    # 获取需要评估的图片数据
+    transform = transforms.Compose([transforms.Resize((32, 32)), transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    image = Image.open('assets/ship.jpg').convert('RGB')
+    input_data = transform(image)
+    # 添加批次维度
+    input_data = input_data.unsqueeze(0)
+    input_data = input_data.to(device)
+
+    image_category_list = ['plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+    # 获取评估结果
+    with torch.no_grad():
+        output_data = model(input_data)
+    # 获取每个类别的概率
+    probs = torch.nn.functional.softmax(output_data[0], dim=0)
+    # 获取前 3 条数据（topk 就是 top -k 的意思，即获取前 k 条数据）
+    top3_probability, top3_category = torch.topk(probs, 3)
+    for i in range(top3_probability.size(0)):
+        print(f'category:{image_category_list[top3_category[i].item()]}, probability:{top3_probability[i].item()}')
+    '''
+category:ship, probability:0.9999663829803467
+category:plane, probability:2.452900844218675e-05
+category:horse, probability:2.469446826580679e-06
+    '''
+
 
 if __name__ == '__main__':
-    #sample1()
-    #sample2()
+    # 从 cifar10 数据集获取图片分类的训练数据和测试数据
+    sample1()
+    # 通过 ResNet50 做图片分类的学习（对 cifar10 数据集做训练和测试），并保存训练后的模型
+    sample2()
+    # 加载训练后的模型，并评估指定的图片
     sample3()
 

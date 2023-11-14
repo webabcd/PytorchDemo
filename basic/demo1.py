@@ -325,9 +325,16 @@ if __name__ == '__main__':
     # 当前环境是否支持 cuda
     if torch.cuda.is_available():
         a = torch.tensor([1,2,3]) 
+
         # 后续关于此张量的计算都会在 gpu 上运行
-        a.cuda()
+        a = a.cuda()
+        print(a.device) # cuda:0
+
         # 原来在 gpu 上运行的张量改在 cpu 上运行
-        a.cpu()
+        a = a.cpu()
+        print(a.device) # cpu
+
         # 可以指定在哪个 gpu 上运行
-        a.to("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        a = a.to(device)
+        print(a.device) # cuda:0

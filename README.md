@@ -18,3 +18,5 @@
 - basic/demo1.py
 2. 自动求导
 - basic/demo2.py
+3. 通过 ResNet50 做图片分类的学习（对 cifar10 数据集做训练和测试），保存训练后的模型，加载训练后的模型并评估指定的图片
+- basic/demo3.py
