@@ -6,16 +6,8 @@ def sample1():
     a = np.arange(8)
     print(a) # [0 1 2 3 4 5 6 7]
 
-    # np.resize() 修改数组的形状
-    print(np.resize(a, (4,2)))
-    '''
-[[0 1]
- [2 3]
- [4 5]
- [6 7]]
-    '''
-
-    # reshape() 修改数组的形状，按行排序
+    # reshape() 修改数组的形状（要保证数组的形状的大小不变），按行排序
+    # 数组 a 的形状的大小是 8，数组 b 的形状的大小是 2 * 4 = 8
     b = a.reshape(4,2, order='C')
     print(b)
     '''
@@ -24,9 +16,10 @@ def sample1():
  [4 5]
  [6 7]]
     '''
-    # reshape() 修改数组的形状，按列排序
-    c = a.reshape(4,2, order='F')
-    print(c)
+    # reshape() 修改数组的形状（要保证数组的形状的大小不变），按列排序
+    # -1 代表自动决定这个轴的大小，因为数组 a 的形状的大小是 8，所以数组 b 的形状的大小也是 8（其第 1 轴的大小为 2，所以其第 0 轴的大小会自动指定为 4）
+    b = a.reshape(-1,2, order='F')
+    print(b)
     '''
 [[0 4]
  [1 5]
@@ -34,16 +27,27 @@ def sample1():
  [3 7]]
     '''
 
+    # np.resize() 修改数组的形状
+    # 与 reshape() 不同的是，resize() 可以改变形状的大小，空白部分会用原数据按顺序填充
+    c = np.resize(a, (4,3))
+    print(c)
+    '''
+[[0 1 2]
+ [3 4 5]
+ [6 7 0]
+ [1 2 3]]
+    '''
+
     # flat 可以将多维数组转换为元素的迭代器，其可以迭代出每一个元素
-    d = [v for v in c.flat]
+    d = [v for v in b.flat]
     print(d) # [0, 4, 1, 5, 2, 6, 3, 7]
 
     # flatten() 将多维数组降级为一维数组，按行排序
-    e = c.flatten(order='C')
+    e = b.flatten(order='C')
     print(e) # [0 4 1 5 2 6 3 7]
 
     # flatten() 将多维数组降级为一维数组，按列排序
-    f = c.flatten(order='F')
+    f = b.flatten(order='F')
     print(f) # [0 1 2 3 4 5 6 7]
 
     g = np.array([[1, 2], [3, 4]])
