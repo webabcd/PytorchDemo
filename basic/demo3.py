@@ -1,4 +1,5 @@
 '''
+通过卷积神经网络（Convolutional Neural Networks, CNN）做图片分类
 本例用于演示如何通过 ResNet50 做图片分类的学习（对 cifar10 数据集做训练和测试），保存训练后的模型，加载训练后的模型并评估指定的图片
 
 
@@ -125,7 +126,7 @@ def sample2():
     # 定义优化器
     # torch.optim.Adam 是 Adam 优化算法的实现
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    # 遍历整个数据集的次数
+    # 整个数据集的训练轮次
     epoch = 10
     
     for i in range(epoch):
@@ -145,7 +146,7 @@ def sample2():
             # 当前迭代出的批次的分类数据的集合
             labels = labels.to(device)
             
-            # 对当前批次的数据做训练
+            # 通过模型预测数据
             outputs = model(images)
             loss = criterion(outputs, labels)
             train_total_num += labels.shape[0]
@@ -179,7 +180,7 @@ def sample2():
             images = images.to(device)
             labels = labels.to(device)
             
-            # 对当前批次的数据做测试
+            # 通过模型预测数据
             outputs = model(images)
             loss = criterion(outputs,labels)
             test_total_num += labels.shape[0]
