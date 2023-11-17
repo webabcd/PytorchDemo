@@ -22,3 +22,5 @@
 - basic/demo3.py
 4. 通过长短时记忆网络（Long Short-Term Memory, LSTM）做时间序列预测 - 通过自定义 LSTM 模型做股价的预测
 - basic/demo4.py
+5. 通过门控循环单元网络（Gated Recurrent Unit, GRU）做时间序列预测 - 通过自定义 GRU 模型做股价的预测
+- basic/demo5.py
