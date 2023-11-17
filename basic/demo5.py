@@ -26,6 +26,10 @@ test_data_percent = 0.1
 lookback = 20
 # 需要预测未来的天数
 days_future = 10
+# 整个数据集的训练轮次
+epoch = 100
+# 优化器的学习率（learning rate）
+lr = 1e-2
 
 def sample1(code):
     # 读 csv 文件，并转为 DataFrame 数据
@@ -56,8 +60,6 @@ def sample1(code):
     # MSE - 均方误差（Mean Squared Error）是将预测值与实际值之间的差值平方后求平均
     # RMSE - 均方根误差（Root Mean Squared Error）就是将 MSE 开方
     criterion = torch.nn.MSELoss(reduction='mean')
-    # 优化器的学习率（learning rate）
-    lr = 1e-2
     # 定义优化器
     # torch.optim.Adam 是 Adam 优化算法的实现
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -74,8 +76,6 @@ def sample1(code):
 
     # 将模型设置为训练模式
     model.train()
-    # 整个数据集的训练轮次
-    epoch = 100
     # 用于保存每个训练轮次的损失率
     loss_rate = np.zeros(epoch)
     start_time = time.time()
