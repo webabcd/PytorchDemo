@@ -136,7 +136,12 @@ def sample1(code):
                 x_future_temp = np.append(x_future.numpy(), np.expand_dims(y_future_pred.numpy(), axis=0), axis=1)
                 x_future = torch.from_numpy(x_future_temp[:, -lookback:])
         result = scaler.inverse_transform(np.array(preds).reshape(-1,1))
+        # 打印数据集中的最后一条数据和预测结果
         print(df[-1:], "\n", result)
+        # 绘制最近的真实股价图，以及预测的未来股价图
+        real = pd.DataFrame(scaler.inverse_transform(price[-lookback:]))
+        real_and_pred = pd.concat([real, pd.DataFrame(result)]).reset_index()
+        plot_stock_pred("Future:" + code, real, real_and_pred)
 
 
 # 获取训练数据和测试数据
@@ -218,8 +223,8 @@ def plot_loss(title, loss_rate):
 def plot_stock_pred(title, stock_data, pred_data):
     sns.set_style("darkgrid")    
     plt.plot()
-    ax = sns.lineplot(x=stock_data.index, y=stock_data[0], label="real", color='royalblue')
     ax = sns.lineplot(x=pred_data.index, y=pred_data[0], label="pred", color='tomato')
+    ax = sns.lineplot(x=stock_data.index, y=stock_data[0], label="real", color='royalblue')
     ax.set_title(title, size=14, fontweight='bold')
     ax.set_xlabel("Days", size=14)
     ax.set_ylabel("Price", size=14)
