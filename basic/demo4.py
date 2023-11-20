@@ -23,11 +23,11 @@ only_predict_future = True
 # 测试数据占全部数据的百分比
 test_data_percent = 0.1
 # 需要回溯的数据的条数（为了预测下一个时间点的数据，所需的之前的数据的条数）
-lookback = 20
+lookback = 100
 # 需要预测未来的天数
-days_future = 10
+days_future = 20
 # 整个数据集的训练轮次
-epoch = 100
+epoch = 50
 # 优化器的学习率（learning rate）
 lr = 1e-2
 
