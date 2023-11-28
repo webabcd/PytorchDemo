@@ -151,7 +151,7 @@ def sample1(code):
 def get_train_test(price, lookback):
     data = []
     
-    for index in range(len(price) - (lookback + 1)): 
+    for index in range(len(price) - lookback): 
         data.append(price[index: index + (lookback + 1)])
     
     data = np.array(data)

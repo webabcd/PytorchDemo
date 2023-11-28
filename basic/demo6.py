@@ -24,10 +24,10 @@ only_predict_future = True
 test_data_percent = 0.1
 # 需要回溯的数据的条数（为了预测下一个时间点的数据，所需的之前的数据的条数）
 lookback = 100
-# 需要预测未来的天数
-days_future = 20
 # 整个数据集的训练轮次
 epoch = 50
+# lstm 或 gru
+model_type = "gru"
 # 优化器的学习率（learning rate）
 lr = 1e-2
 
@@ -42,18 +42,35 @@ def sample1(code):
     # 绘制股价的曲线图
     if not only_predict_future:
         plot_stock(code, df)
+    
+    # 获取各项技术指标
+    indicator_name = ['close','volume_adi','volume_obv','volume_cmf','volume_fi','volume_em','volume_sma_em','volume_vpt','volume_vwap','volume_mfi','volume_nvi','volatility_bbm','volatility_bbh','volatility_bbl','volatility_bbw','volatility_bbp','volatility_bbhi','volatility_bbli','volatility_kcc','volatility_kch','volatility_kcl','volatility_kcw','volatility_kcp','volatility_kchi','volatility_kcli','volatility_dcl','volatility_dch','volatility_dcm','volatility_dcw','volatility_dcp','volatility_atr','volatility_ui','trend_macd','trend_macd_signal','trend_macd_diff','trend_sma_fast','trend_sma_slow','trend_ema_fast','trend_ema_slow','trend_vortex_ind_pos','trend_vortex_ind_neg','trend_vortex_ind_diff','trend_trix','trend_mass_index','trend_dpo','trend_kst','trend_kst_sig','trend_kst_diff','trend_ichimoku_conv','trend_ichimoku_base','trend_ichimoku_a','trend_ichimoku_b','trend_stc','trend_adx','trend_adx_pos','trend_adx_neg','trend_cci','trend_visual_ichimoku_a','trend_visual_ichimoku_b','trend_aroon_up','trend_aroon_down','trend_aroon_ind','trend_psar_up','trend_psar_down','trend_psar_up_indicator','trend_psar_down_indicator','momentum_rsi','momentum_stoch_rsi','momentum_stoch_rsi_k','momentum_stoch_rsi_d','momentum_tsi','momentum_uo','momentum_stoch','momentum_stoch_signal','momentum_wr','momentum_ao','momentum_roc','momentum_ppo','momentum_ppo_signal','momentum_ppo_hist','momentum_pvo','momentum_pvo_signal','momentum_pvo_hist','momentum_kama','others_dr','others_dlr','others_cr'] 
+    indicator = df[indicator_name].fillna(0).values # fillna(0) 用于将所有 NaN 值替换为 0 值
+    # reshape(-1, 1) 用于把一维数组变为二维数组，因为机器学习中某些库要求输入的数据必须是二维的
+    price = df["close"].values.reshape(-1, 1)
+    # 数据归一（-1 到 1 之间）
+    scaler = MinMaxScaler(feature_range=(-1, 1))
+    indicator  = scaler.fit_transform(indicator)
+    price = scaler.fit_transform(price)
 
+    # 获取训练数据和测试数据
+    x_train, y_train, x_test, y_test = get_train_test(indicator, price, lookback)
+    print(x_train.shape, y_train.shape, x_test.shape, y_test.shape)
 
     # 输入数据的维度
-    input_dim = 1
+    input_dim = indicator.shape[1]
     # 隐藏层的维度
     hidden_dim = 32
     # 输出层的维度
     output_dim = 1
     # LSTM 模型的层数
     num_layers = 2
-    # 实例化自定义的 LSTM 模型
-    model = LSTM(input_dim=input_dim, hidden_dim=hidden_dim, output_dim=output_dim, num_layers=num_layers)
+    if model_type == "lstm":
+        # 实例化自定义的 LSTM 模型
+        model = LSTM(input_dim=input_dim, hidden_dim=hidden_dim, output_dim=output_dim, num_layers=num_layers)
+    elif model_type == "gru":
+        # 实例化自定义的 GRU 模型
+        model = GRU(input_dim=input_dim, hidden_dim=hidden_dim, output_dim=output_dim, num_layers=num_layers)
     # 定义损失函数
     # torch.nn.MSELoss 用于计算均方误差，通常用于回归问题
     # reduction='mean' 意味着将对所有样本的损失值求平均，得到最终的损失值
@@ -63,16 +80,6 @@ def sample1(code):
     # 定义优化器
     # torch.optim.Adam 是 Adam 优化算法的实现
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    
-    # df['close'].values 用于获取 close 列的全部数据，即保存了历史收盘价的一维数组
-    # reshape(-1, 1) 用于把一维数组变为二维数组，因为机器学习中某些库要求输入的数据必须是二维的
-    price = df['close'].values.reshape(-1, 1)
-    # 数据归一（-1 到 1 之间）
-    scaler = MinMaxScaler(feature_range=(-1, 1))
-    price = scaler.fit_transform(price)
-    # 获取训练数据和测试数据
-    x_train, y_train, x_test, y_test = get_train_test(price, lookback)
-    print(x_train.shape, y_train.shape, x_test.shape, y_test.shape)
 
     # 将模型设置为训练模式
     model.train()
@@ -126,15 +133,12 @@ def sample1(code):
 
     # 预测未来的股价
     if only_predict_future:
-        x_future = np.expand_dims(price[-lookback:], axis=0)
+        x_future = np.expand_dims(indicator[-lookback:], axis=0)
         x_future = torch.from_numpy(x_future).type(torch.Tensor)
         with torch.no_grad():
             preds = []
-            for i in range(days_future):
-                y_future_pred = model(x_future)
-                preds.append(y_future_pred.item())
-                x_future_temp = np.append(x_future.numpy(), np.expand_dims(y_future_pred.numpy(), axis=0), axis=1)
-                x_future = torch.from_numpy(x_future_temp[:, -lookback:])
+            y_future_pred = model(x_future)
+            preds.append(y_future_pred.item())
         result = scaler.inverse_transform(np.array(preds).reshape(-1,1))
         # 打印数据集中的最后一条数据和预测结果
         print(df[-1:], "\n", result)
@@ -145,16 +149,19 @@ def sample1(code):
 
 
 # 获取训练数据和测试数据
-# 比如 price 有 100 条数据，lookback 是 20，现在把他们全部用于训练数据，则一共可以构造出 79 组数据
+# 比如 indicator 有 100 条数据，lookback 是 20，现在把他们全部用于训练数据，则一共可以构造出 79 组数据
 #   每组数据中，x 有 20 条数据，y 有 1 条数据（这条数据就是 x 的那 20 条数据的后面的那一条）
 #   后续要通过 x 预测 y，即通过前 20 条数据预测第 21 条数据的值
-def get_train_test(price, lookback):
+def get_train_test(indicator, price, lookback):
     data = []
+    data_price = []
     
-    for index in range(len(price) - lookback): 
-        data.append(price[index: index + (lookback + 1)])
+    for index in range(len(indicator) - lookback): 
+        data.append(indicator[index: index + (lookback + 1)])
+        data_price.append(price[index: index + (lookback + 1)])
     
     data = np.array(data)
+    data_price = np.array(data_price)
 
     test_data_size = 0
     if not only_predict_future:
@@ -162,10 +169,10 @@ def get_train_test(price, lookback):
     train_data_size = data.shape[0] - (test_data_size)
     
     x_train = data[:train_data_size, :-1, :]
-    y_train = data[:train_data_size, -1, :]
+    y_train = data_price[:train_data_size, -1, :]
     
     x_test = data[train_data_size:, :-1]
-    y_test = data[train_data_size:, -1, :]
+    y_test = data_price[train_data_size:, -1, :]
     
     # 这里保存的是训练数据的输入值，其有 n 个数据，每个数据里有 lookback 条数据
     x_train = torch.from_numpy(x_train).type(torch.Tensor)
@@ -191,6 +198,22 @@ class LSTM(nn.Module):
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).requires_grad_()
         c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).requires_grad_()
         out, (hn, cn) = self.lstm(x, (h0.detach(), c0.detach()))
+        out = self.fc(out[:, -1, :]) 
+        return out
+    
+# 自定义 GRU 模型
+class GRU(nn.Module):
+    def __init__(self, input_dim, hidden_dim, num_layers, output_dim):
+        super(GRU, self).__init__()
+        self.hidden_dim = hidden_dim
+        self.num_layers = num_layers
+        
+        self.gru = nn.GRU(input_dim, hidden_dim, num_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_dim, output_dim)
+
+    def forward(self, x):
+        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).requires_grad_()
+        out, (hn) = self.gru(x, (h0.detach()))
         out = self.fc(out[:, -1, :]) 
         return out
 
