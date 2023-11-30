@@ -1,6 +1,5 @@
 '''
 通过长短时记忆网络（Long Short-Term Memory, LSTM）做时间序列预测
-本例用于演示如何通过自定义 LSTM 模型做股价的预测
 
 注：LSTM 是循环神经网络（Recurrent Neural Network, RNN）的一种
 '''
@@ -31,17 +30,18 @@ epoch = 50
 # 优化器的学习率（learning rate）
 lr = 1e-2
 
-def sample1(code):
-    # 读 csv 文件，并转为 DataFrame 数据
-    df = pd.read_csv(f'assets/{code}.csv')
-    # 排序
-    df = df.sort_values('date', ascending=True)
-    # 按照当前数据排序重建默认索引（因为后续绘图时是按照索引的顺序绘图的，所以这里要按照当前数据排序重建默认索引，否则横坐标的数据的顺序可能会有问题）
-    df = df.reset_index()
+def sample1():
+    # 生成一个包含 x, y 的 DataFrame 数据，模拟一个正弦曲线
+    x = np.linspace(0, 64 * np.pi, 5000)  
+    y = np.sin(x)
+    df = pd.DataFrame({  
+        'x': x,  
+        'y': y  
+    })  
 
-    # 绘制股价的曲线图
+    # 绘制 x, y 曲线图
     if not only_predict_future:
-        plot_stock(code, df)
+        plot_xy("x,y", df)
 
 
     # 输入数据的维度
@@ -64,14 +64,14 @@ def sample1(code):
     # torch.optim.Adam 是 Adam 优化算法的实现
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     
-    # df['close'].values 用于获取 close 列的全部数据，即保存了历史收盘价的一维数组
+    # df['y'].values 用于获取 y 列的全部数据
     # reshape(-1, 1) 用于把一维数组变为二维数组，因为机器学习中某些库要求输入的数据必须是二维的
-    price = df['close'].values.reshape(-1, 1)
+    y_data = df['y'].values.reshape(-1, 1)
     # 数据归一（-1 到 1 之间）
     scaler = MinMaxScaler(feature_range=(-1, 1))
-    price = scaler.fit_transform(price)
+    y_data = scaler.fit_transform(y_data)
     # 获取训练数据和测试数据
-    x_train, y_train, x_test, y_test = get_train_test(price, lookback)
+    x_train, y_train, x_test, y_test = get_train_test(y_data, lookback)
     print(x_train.shape, y_train.shape, x_test.shape, y_test.shape)
 
     # 将模型设置为训练模式
@@ -96,7 +96,7 @@ def sample1(code):
 
     # 绘制所有轮次的损失率的曲线图
     if not only_predict_future:
-        plot_loss("Training Loss:" + code, loss_rate)
+        plot_loss("Training Loss", loss_rate)
 
     # 把训练数据和预测数据，通过 detach() 去掉梯度信息，然后转为 numpy 数据，然后通过 scaler.inverse_transform() 取消数据的归一
     y_train = scaler.inverse_transform(y_train.detach().numpy())
@@ -104,9 +104,9 @@ def sample1(code):
     # 计算 RMSE（将 MSE 开方）以便衡量模型的预测误差
     train_rmse = math.sqrt(mean_squared_error(y_train[:,0], y_train_pred[:,0]))
     print('train rsme: %.2f' % (train_rmse))
-    # 绘制训练数据中的，真实的股价曲线和预测的股价曲线
+    # 绘制训练数据中的，真实值的曲线和预测值的曲线
     if not only_predict_future:
-        plot_stock_pred("Training:" + code, pd.DataFrame(y_train), pd.DataFrame(y_train_pred))
+        plot_stock_pred("Training", pd.DataFrame(y_train), pd.DataFrame(y_train_pred))
 
 
     # 将模型设置为测试模式，即评估模式
@@ -120,13 +120,13 @@ def sample1(code):
         # 计算 RMSE（将 MSE 开方）以便衡量模型的预测误差
         test_rmse = math.sqrt(mean_squared_error(y_test[:,0], y_test_pred[:,0]))
         print('test rsme: %.2f' % (test_rmse))
-        # 绘制测试数据中的，真实的股价曲线和预测的股价曲线
-        plot_stock_pred("Test:" + code, pd.DataFrame(y_test), pd.DataFrame(y_test_pred))
+        # 绘制测试数据中的，真实值的曲线和预测值的曲线
+        plot_stock_pred("Test", pd.DataFrame(y_test), pd.DataFrame(y_test_pred))
 
 
-    # 预测未来的股价
+    # 预测未来的值
     if only_predict_future:
-        x_future = np.expand_dims(price[-lookback:], axis=0)
+        x_future = np.expand_dims(y_data[-lookback:], axis=0)
         x_future = torch.from_numpy(x_future).type(torch.Tensor)
         with torch.no_grad():
             preds = []
@@ -138,21 +138,21 @@ def sample1(code):
         result = scaler.inverse_transform(np.array(preds).reshape(-1,1))
         # 打印数据集中的最后一条数据和预测结果
         print(df[-1:], "\n", result)
-        # 绘制最近的真实股价图，以及预测的未来股价图
-        real = pd.DataFrame(scaler.inverse_transform(price[-lookback:]))
+        # 绘制最近的真实的曲线图，以及预测的未来的曲线图
+        real = pd.DataFrame(scaler.inverse_transform(y_data[-lookback:]))
         real_and_pred = pd.concat([real, pd.DataFrame(result)]).reset_index()
-        plot_stock_pred("Future:" + code, real, real_and_pred)
+        plot_stock_pred("Future", real, real_and_pred)
 
 
 # 获取训练数据和测试数据
-# 比如 price 有 100 条数据，lookback 是 20，现在把他们全部用于训练数据，则一共可以构造出 79 组数据
+# 比如 y_data 有 100 条数据，lookback 是 20，现在把他们全部用于训练数据，则一共可以构造出 79 组数据
 #   每组数据中，x 有 20 条数据，y 有 1 条数据（这条数据就是 x 的那 20 条数据的后面的那一条）
 #   后续要通过 x 预测 y，即通过前 20 条数据预测第 21 条数据的值
-def get_train_test(price, lookback):
+def get_train_test(y_data, lookback):
     data = []
     
-    for index in range(len(price) - lookback): 
-        data.append(price[index: index + (lookback + 1)])
+    for index in range(len(y_data) - lookback): 
+        data.append(y_data[index: index + (lookback + 1)])
     
     data = np.array(data)
 
@@ -194,16 +194,16 @@ class LSTM(nn.Module):
         out = self.fc(out[:, -1, :]) 
         return out
 
-# 绘制股价的曲线图
-def plot_stock(title, df):
+# 绘制 x, y 曲线图
+def plot_xy(title, df):
     # 横坐标上刻度线的数量
     num = 10
     # 横坐标上刻度线之间的数据量
     step = len(df) // num
     # 设置横坐标刻度线的位置，标签文本，标签文件的旋转角度
-    plt.xticks(ticks=df['date'][::step].index, labels=df['date'][::step], rotation=45)
+    plt.xticks(ticks=df['x'][::step].index, labels=df['x'][::step].round(2), rotation=45)
     # 指定纵坐标的数据，并绘制图片
-    plt.plot(df['close'])
+    plt.plot(df['y'])
     # 指定需要在图片上显示的标题
     plt.title(title)
     # 显示图片并阻塞，直到关闭图片
@@ -219,18 +219,18 @@ def plot_loss(title, loss_rate):
     ax.set_ylabel("Loss", size=14)
     plt.show()
 
-# 绘制真实的股价曲线和预测的股价曲线
+# 绘制真实值的曲线和预测值的曲线
 def plot_stock_pred(title, stock_data, pred_data):
     sns.set_style("darkgrid")    
     plt.plot()
     ax = sns.lineplot(x=pred_data.index, y=pred_data[0], label="pred", color='tomato')
     ax = sns.lineplot(x=stock_data.index, y=stock_data[0], label="real", color='royalblue')
     ax.set_title(title, size=14, fontweight='bold')
-    ax.set_xlabel("Days", size=14)
-    ax.set_ylabel("Price", size=14)
+    ax.set_xlabel("x", size=14)
+    ax.set_ylabel("y", size=14)
     ax.set_xticklabels('')
     plt.show()
 
 
 if __name__ == '__main__':
-    sample1('000725')
+    sample1()
