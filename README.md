@@ -24,3 +24,5 @@
 - basic/demo4.py
 5. 通过门控循环单元网络（Gated Recurrent Unit, GRU）做时间序列预测
 - basic/demo5.py
+6. K-means 聚类算法
+- basic/demo6.py

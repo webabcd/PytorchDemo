@@ -48,7 +48,7 @@ def sample1():
     input_dim = 1
     # 隐藏层的维度
     hidden_dim = 32
-    # 输出层的维度
+    # 输出数据的维度
     output_dim = 1
     # LSTM 模型的层数
     num_layers = 2
@@ -184,13 +184,30 @@ class LSTM(nn.Module):
         self.hidden_dim = hidden_dim
         self.num_layers = num_layers
         
+        # 定义一个 LSTM 层
+        #   input_dim: 输入数据的维度。比如每个时间点都有 n 个特征，那么这里就设置为 n
+        #   hidden_dim: 隐藏层的维度。隐藏层的维度会影响到模型能够捕捉到的复杂性的级别（参考 RNN 的说明）
+        #   num_layers: 堆叠的层数，也就是有多少个 LSTM 单元（增加层数可以让模型学习更复杂的模式）
+        #   batch_first: 表示输入数据是否以批量的形式首先进入 LSTM
         self.lstm = nn.LSTM(input_dim, hidden_dim, num_layers, batch_first=True)
+        # 定义一个线性层，其常常被用作神经网络的最后一层，负责将隐藏层的结果转化为具体的输出
+        # 注：fc 的意思是全连接层（fully connected layer）
+        #   hidden_dim：输入数据的维度，其来自于模型前面的隐藏层。
+        #   output_dim：输出数据的维度，其对应于模型的预测目标。比如你要通过输入数据预测 n 个值，那么这里就设置为 n
         self.fc = nn.Linear(hidden_dim, output_dim)
 
+    # 定义 LSTM 模型的前向传播函数
     def forward(self, x):
+        # 定义一个隐藏状态张量 h0，形状为 self.num_layers, x.size(0), self.hidden_dim，并且在反向转播时需要计算梯度
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).requires_grad_()
+        # 和上面类似，这个张量 c0 用于存储 LSTM 的单元状态
         c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).requires_grad_()
+        # 通过 LSTM 层将输入 x 和隐藏状态 h0 和单元状态 c0 进行前向传播
+        #   out 是 LSTM 模型的输出结果，(hn, cn) 是一个包含隐藏状态和单元状态的元组
         out, (hn, cn) = self.lstm(x, (h0.detach(), c0.detach()))
+        # 将 LSTM 模型的输出传递给一个全连接层
+        #   out[:, -1, :] 的意思是选择 LSTM 输出的最后一个时间步的隐藏状态
+        #   最后的输出结果 out 是全连接层的输出，这个输出可以直接用于预测或进一步处理
         out = self.fc(out[:, -1, :]) 
         return out
 
