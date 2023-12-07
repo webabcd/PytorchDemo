@@ -54,19 +54,17 @@ def sample1():
         # 更新中心点位置
         centroids = new_centroids.clone()
 
-
     # 保存簇中心和簇标签到文件
     torch.save(centroids, 'checkpoints/my_kmeans_centroids.pt')
     torch.save(cluster_assignment, 'checkpoints/my_kmeans_cluster_assignment.pt')
-    # 从文件加载簇中心和簇标签
-    loaded_centroids = torch.load('checkpoints/my_kmeans_centroids.pt')
-    loaded_cluster_assignment = torch.load('checkpoints/my_kmeans_cluster_assignment.pt')
-    
+
+    # 用已有的聚类结果对指定的数据做分类
+    test()
 
     # 可视化聚类结果
     for i in range(k):
         cluster_i = data[cluster_assignment == i]
-        plt.scatter(cluster_i[:, 0], cluster_i[:, 1], c=generate_random_color(), label=f'Cluster {i + 1}')
+        plt.scatter(cluster_i[:, 0], cluster_i[:, 1], c=generate_random_color(), label=f'Cluster {i}')
     plt.scatter(centroids[:, 0], centroids[:, 1], marker='x', c='k', s=100, label='Centroids')
     plt.xlabel('Feature 1')
     plt.ylabel('Feature 2')
@@ -77,7 +75,26 @@ def sample1():
 def generate_random_color():  
     red, green, blue = (random.randint(0, 255) for _ in range(3))  
     color = "#{:02x}{:02x}{:02x}".format(red, green, blue)  
-    return color  
+    return color
+
+
+def test():
+    # 从文件加载簇中心和簇标签
+    centroids = torch.load('checkpoints/my_kmeans_centroids.pt')
+    cluster_assignment = torch.load('checkpoints/my_kmeans_cluster_assignment.pt')
+
+    # 定义一个需要分类的测试数据
+    data = torch.tensor([0, 0])
+
+    # 计算新数据点与每个簇中心之间的距离
+    distances = np.linalg.norm(centroids - data, axis=1)  # 计算欧氏距离
+    # 找到最近的簇，即距离最小的索引
+    nearest_cluster_index = np.argmin(distances)
+    # 分配新数据点到最近的簇
+    assigned_cluster = cluster_assignment[nearest_cluster_index]
+
+    # 打印测试数据以及对他的分类
+    print(f"data:{data}, result:{assigned_cluster}")
 
 
 if __name__ == '__main__':
