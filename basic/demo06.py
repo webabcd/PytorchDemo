@@ -84,17 +84,17 @@ def test():
     cluster_assignment = torch.load('checkpoints/my_kmeans_cluster_assignment.pt')
 
     # 定义一个需要分类的测试数据
-    data = torch.tensor([0, 0])
+    test_data = torch.tensor([0, 0])
 
     # 计算新数据点与每个簇中心之间的距离
-    distances = np.linalg.norm(centroids - data, axis=1)  # 计算欧氏距离
+    distances = np.linalg.norm(centroids - test_data, axis=1)  # 计算欧氏距离
     # 找到最近的簇，即距离最小的索引
     nearest_cluster_index = np.argmin(distances)
     # 分配新数据点到最近的簇
     assigned_cluster = cluster_assignment[nearest_cluster_index]
 
-    # 打印测试数据以及对他的分类
-    print(f"data:{data}, result:{assigned_cluster}")
+    # 打印测试数据以及分类的结果
+    print(f"test_data:{test_data}, assigned_cluster:{assigned_cluster}")
 
 
 if __name__ == '__main__':
