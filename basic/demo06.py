@@ -4,6 +4,9 @@ K-means 聚类算法
 K-means 聚类算法是一种把数据分成 k 个组的聚类算法
 它先随机选出 k 个数据点作为初始的组中心，然后计算每个数据点到每个组中心的距离，把每个数据点分配给距离它最近的那个组中心，然后根据已有的数据点重新计算组中心
 这个过程会重复进行，直到满足某个条件，例如没有数据点需要重新分配或没有组中心再变化，或者误差最小
+
+
+.pt 文件通常用于存储 PyTorch 模型的状态字典（state_dict）、模型结构、模型权重等相关信息。训练一个神经网络模型后，如果想要保存其状态、模型的结构和参数等，则可以保存文 .pt 文件
 '''
 
 import torch
@@ -51,7 +54,15 @@ def sample1():
         # 更新中心点位置
         centroids = new_centroids.clone()
 
+
+    # 保存簇中心和簇标签到文件
+    torch.save(centroids, 'checkpoints/my_kmeans_centroids.pt')
+    torch.save(cluster_assignment, 'checkpoints/my_kmeans_cluster_assignment.pt')
+    # 从文件加载簇中心和簇标签
+    loaded_centroids = torch.load('checkpoints/my_kmeans_centroids.pt')
+    loaded_cluster_assignment = torch.load('checkpoints/my_kmeans_cluster_assignment.pt')
     
+
     # 可视化聚类结果
     for i in range(k):
         cluster_i = data[cluster_assignment == i]
