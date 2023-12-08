@@ -24,5 +24,10 @@
 - basic/demo04.py
 5. 通过门控循环单元网络（Gated Recurrent Unit, GRU）做时间序列预测
 - basic/demo05.py
-6. K-means 聚类算法
+6. K-means 聚类算法（自定义实现，对一个 x,y 数据做分类）
 - basic/demo06.py
+7. K-means 聚类算法（sklearn.cluster 的 KMeans 实现，对一个包含 10 个特征的数据做分类）
+- basic/demo07.py
+
+
+
