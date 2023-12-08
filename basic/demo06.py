@@ -27,7 +27,7 @@ def sample1():
     centroids = data[:k, :].clone()
     print("初始中心点：", centroids) # shape: 5,2
 
-    # 定义迭代次数
+    # 定义最大迭代次数
     max_iters = 100
     # 定义容差，用于判断算法是否收敛到最优解
     tolerance = 1e-5

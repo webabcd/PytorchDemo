@@ -10,7 +10,7 @@ K-means 聚类算法是一种把数据分成 k 个组的聚类算法
 '''
 
 import torch
-from sklearn.cluster import KMeans  # 用于实现 K-means 聚类
+from sklearn.cluster import KMeans
 import numpy as np
 
 def sample1():
@@ -18,13 +18,17 @@ def sample1():
     n_clusters = 5
     # 定义容差，用于判断算法是否收敛到最优解
     tolerance = 1e-5
+    # 定义最大迭代次数
+    max_iter = 300
+    # 定义初始中心点的随机初始化次数
+    n_init = 5
 
     # 测试数据（100 个数据点，每个数据点有 10 个特征）
     data_tensor = torch.randn(100, 10) 
     data_np = data_tensor.numpy()
 
     # 实例化 KMeans 对象
-    kmeans = KMeans(n_clusters=n_clusters, tol=tolerance)
+    kmeans = KMeans(n_clusters=n_clusters, tol=tolerance, n_init=n_init, max_iter=max_iter)
     # 对指定的数据做聚类分析
     kmeans.fit(data_np)
 
